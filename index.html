@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🗺️ 寻宝奇缘 · 异步动画版</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1e2b3f 0%, #0f1a2b 100%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-family: 'Segoe UI', 'Poppins', system-ui, sans-serif;
+      padding: 16px;
+    }
+    .treasure-card {
+      width: 780px;
+      max-width: 100%;
+      background: rgba(22, 34, 50, 0.85);
+      backdrop-filter: blur(8px);
+      border-radius: 48px;
+      border: 2px solid #f7d44a;
+      box-shadow: 0 25px 40px -10px rgba(0, 0, 0, 0.7), 0 0 0 3px rgba(247, 212, 74, 0.2) inset;
+      padding: 28px 32px 40px;
+      transition: all 0.2s;
+    }
+    h1 {
+      font-size: 2.2rem;
+      text-align: center;
+      font-weight: 700;
+      letter-spacing: 3px;
+      margin: 0 0 6px;
+      color: #f7e6b0;
+      text-shadow: 0 4px 12px #f0b34b, 0 0 12px #ffd966;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+    h1 span {
+      font-size: 2.6rem;
+      filter: drop-shadow(0 0 8px gold);
+    }
+    .subtitle {
+      text-align: center;
+      color: #9bb7d4;
+      font-style: italic;
+      letter-spacing: 2px;
+      margin: 0 0 24px;
+      font-size: 1rem;
+      border-bottom: 1px dashed #3e5770;
+      padding-bottom: 16px;
+    }
+    .animation-stage {
+      background: #0b121c;
+      border-radius: 40px;
+      padding: 28px 24px;
+      margin-bottom: 24px;
+      box-shadow: inset 0 10px 20px rgba(0, 0, 0, 0.8), 0 0 0 2px #2e4258;
+      position: relative;
+      min-height: 240px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .scene {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      transition: all 0.5s ease;
+    }
+    .scene-icon {
+      font-size: 5.2rem;
+      line-height: 1;
+      filter: drop-shadow(0 0 20px currentColor);
+      transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      animation: float 3s infinite ease-in-out;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) scale(1); }
+      50% { transform: translateY(-12px) scale(1.05); }
+    }
+    .scene-message {
+      flex: 1;
+      min-width: 220px;
+      background: rgba(0, 0, 0, 0.45);
+      border-left: 8px solid #f7d44a;
+      padding: 14px 22px;
+      border-radius: 30px;
+      color: #f0f4fa;
+      font-size: 1.25rem;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 18px rgba(0, 0, 0, 0.6);
+      transition: all 0.4s;
+      word-break: break-word;
+    }
+    .scene-message .highlight {
+      color: #ffd966;
+      font-weight: 700;
+    }
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      margin: 18px 0 24px;
+      position: relative;
+      padding: 0 8px;
+    }
+    .progress-steps::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      right: 20px;
+      height: 4px;
+      background: #1f3143;
+      border-radius: 4px;
+      z-index: 0;
+    }
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      z-index: 1;
+      width: 80px;
+    }
+    .step-circle {
+      width: 42px;
+      height: 42px;
+      background: #172635;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+      color: #7089a0;
+      border: 3px solid #2b4158;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+    }
+    .step.active .step-circle {
+      border-color: #f7d44a;
+      background: #2a3a4e;
+      color: #f7e6b0;
+      box-shadow: 0 0 18px #f7d44a, 0 0 6px #f7d44a inset;
+      transform: scale(1.1);
+    }
+    .step.done .step-circle {
+      border-color: #6fcf97;
+      background: #1d3a2b;
+      color: #b1ffc5;
+    }
+    .step-label {
+      font-size: 0.75rem;
+      color: #7b95ad;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      text-align: center;
+    }
+    .step.active .step-label {
+      color: #f7d44a;
+      text-shadow: 0 0 6px #f7d44a;
+    }
+    .buttons {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 8px;
+    }
+    button {
+      background: #f7d44a;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 60px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: 1px;
+      color: #14222e;
+      cursor: pointer;
+      box-shadow: 0 10px 0 #b38f2c, 0 8px 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.1s ease;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 2px solid #ffe28a;
+    }
+    button:active {
+      transform: translateY(6px);
+      box-shadow: 0 4px 0 #b38f2c, 0 8px 20px rgba(0, 0, 0, 0.4);
+    }
+    button:disabled {
+      opacity: 0.5;
+      transform: translateY(4px);
+      box-shadow: 0 6px 0 #7a6320;
+      pointer-events: none;
+      filter: grayscale(0.3);
+    }
+    .log-panel {
+      background: #0f1a24;
+      border-radius: 24px;
+      padding: 16px 20px;
+      height: 130px;
+      overflow-y: auto;
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #b6d0e8;
+      border: 1px solid #30485e;
+      box-shadow: inset 0 0 12px #00000055;
+      scroll-behavior: smooth;
+      margin-top: 12px;
+    }
+    .log-entry {
+      padding: 6px 0;
+      border-bottom: 1px solid #1e3142;
+      display: flex;
+      gap: 8px;
+    }
+    .log-entry:last-child {
+      border-bottom: none;
+    }
+    .log-time {
+      color: #6082a0;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    .log-text {
+      color: #d9e7f5;
+    }
+    .error-log {
+      color: #ff9e9e;
+      font-weight: 500;
+    }
+    .success-log {
+      color: #9fefb0;
+    }
+    .funny-log {
+      color: #ffe08c;
+    }
+    .status-badge {
+      display: inline-block;
+      background: #1d3143;
+      padding: 6px 18px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      color: #bfd7f0;
+      text-align: center;
+      margin-top: 12px;
+      letter-spacing: 1px;
+    }
+    .new-plot-badge {
+      background: #b2801a;
+      color: #fff5d6;
+      border-radius: 20px;
+      padding: 2px 12px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      vertical-align: middle;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+<div class="treasure-card">
+  <h1>
+    <span>🏴‍☠️</span> 寻宝奇缘 <span>✨</span>
+  </h1>
+  <div class="subtitle">async/await · 古老神庙 & 新情节 · 动画冒险</div>
+
+  <!-- 动画场景 -->
+  <div class="animation-stage" id="animationStage">
+    <div class="scene" id="scene">
+      <div class="scene-icon" id="sceneIcon">🏛️</div>
+      <div class="scene-message" id="sceneMessage">
+        点击下方按钮开启寻宝之旅...
+      </div>
+    </div>
+  </div>
+
+  <!-- 进度步骤 -->
+  <div class="progress-steps" id="progressSteps">
+    <div class="step" id="step1">
+      <div class="step-circle">1</div>
+      <div class="step-label">图书馆</div>
+    </div>
+    <div class="step" id="step2">
+      <div class="step-circle">2</div>
+      <div class="step-label">解码古卷</div>
+    </div>
+    <div class="step" id="step3">
+      <div class="step-circle">3</div>
+      <div class="step-label">神庙</div>
+    </div>
+    <div class="step" id="step4">
+      <div class="step-circle">4</div>
+      <div class="step-label">开宝箱</div>
+    </div>
+  </div>
+
+  <!-- 按钮 -->
+  <div class="buttons">
+    <button id="startBtn" onclick="startAdventure()">
+      <span>🚀</span> 开始寻宝
+    </button>
+  </div>
+
+  <!-- 日志面板 -->
+  <div class="log-panel" id="logPanel">
+    <div class="log-entry"><span class="log-time">[系统]</span><span class="log-text">寻宝模拟器已就绪。点击按钮开始</span></div>
+  </div>
+
+  <div class="status-badge" id="statusBadge">⏳ 等待启程</div>
+</div>
+
+<script>
+  // ==================== 新增有趣情节 + async/await 重写 ====================
+  // 模拟宝藏地图API（增强版，加入新情节）
+  class TreasureMap {
+    // 1. 初始线索 + 新情节：图书馆里遇到一只会说话的猫头鹰
+    static async getInitialClue() {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            clue: "在古老的图书馆里找到了第一个线索...",
+            extra: "🦉 一只猫头鹰告诉你：'古卷藏在第三排书架后面！'",
+            icon: "📜"
+          });
+        }, 1000);
+      });
+    }
+
+    // 2. 解码古卷 + 新情节：解码时发现一段隐藏的精灵语
+    static async decodeAncientScript(clue, extra) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (!clue) {
+            reject("没有线索可以解码!");
+          } else {
+            resolve({
+              location: "解码成功!宝藏在一座古老的神庙中...",
+              extra: "🧝 古卷中浮现出精灵语：'月圆之夜，影子指向祭坛'",
+              icon: "🔮"
+            });
+          }
+        }, 1500);
+      });
+    }
+
+    // 3. 搜索神庙 + 新情节：遇到神庙守卫，但可以用谜语分散注意力（增加分支趣味）
+    static async searchTemple(location, extra) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          const random = Math.random();
+          if (random < 0.45) {
+            reject({
+              error: "糟糕!遇到了神庙守卫!",
+              extra: "🗿 守卫拦住了去路，但你可以尝试用谜语吸引它...",
+              icon: "😱"
+            });
+          } else {
+            resolve({
+              box: "找到了一个神秘的箱子...",
+              extra: "✨ 箱子周围闪烁着星光，似乎被施了魔法",
+              icon: "🎁"
+            });
+          }
+        }, 2000);
+      });
+    }
+
+    // 4. 打开宝箱 + 新情节：宝藏是一本无限巧克力食谱
+    static async openTreasureBox() {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            treasure: "恭喜!你找到了传说中的宝藏!",
+            extra: "🍫 宝藏是一本《无限巧克力食谱》，还有一枚古老的金币!",
+            icon: "🏆"
+          });
+        }, 1000);
+      });
+    }
+
+    // 5. 新增情节：神庙守卫的谜语挑战（失败后可重试——但这里为了简单，直接增加一个"安抚守卫"情节）
+    static async calmGuardian() {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            message: "🎭 你讲了一个关于金桃子的谜语，守卫陷入沉思...",
+            extra: "😴 守卫打了个哈欠，让开了道路！",
+            icon: "🤫"
+          });
+        }, 1200);
+      });
+    }
+  }
+
+  // ==================== 动画UI控制 ====================
+  const sceneIcon = document.getElementById('sceneIcon');
+  const sceneMessage = document.getElementById('sceneMessage');
+  const logPanel = document.getElementById('logPanel');
+  const statusBadge = document.getElementById('statusBadge');
+  const startBtn = document.getElementById('startBtn');
+
+  // 进度步骤
+  const step1 = document.getElementById('step1');
+  const step2 = document.getElementById('step2');
+  const step3 = document.getElementById('step3');
+  const step4 = document.getElementById('step4');
+
+  // 日志辅助函数
+  function addLog(message, type = 'normal') {
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
+    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    let cls = 'log-text';
+    if (type === 'error') cls += ' error-log';
+    if (type === 'success') cls += ' success-log';
+    if (type === 'funny') cls += ' funny-log';
+    entry.innerHTML = `<span class="log-time">[${time}]</span><span class="${cls}">${message}</span>`;
+    logPanel.appendChild(entry);
+    logPanel.scrollTop = logPanel.scrollHeight;
+  }
+
+  function setStatus(text, isActive = false) {
+    statusBadge.textContent = text;
+    statusBadge.style.background = isActive ? '#2a5a3a' : '#1d3143';
+    statusBadge.style.color = isActive ? '#b6ffcf' : '#bfd7f0';
+  }
+
+  // 更新场景
+  function updateScene(icon, message, highlight = '') {
+    sceneIcon.textContent = icon;
+    if (highlight) {
+      sceneMessage.innerHTML = message.replace(highlight, `<span class="highlight">${highlight}</span>`);
+    } else {
+      sceneMessage.textContent = message;
+    }
+  }
+
+  // 重置进度高亮
+  function resetSteps() {
+    [step1, step2, step3, step4].forEach(s => s.classList.remove('active', 'done'));
+  }
+
+  function setStepDone(step) {
+    step.classList.remove('active');
+    step.classList.add('done');
+  }
+
+  function setStepActive(step) {
+    step.classList.add('active');
+  }
+
+  // 延迟工具
+  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+  // ==================== 核心 async/await 寻宝过程 ====================
+  async function findTreasureWithAsync() {
+    // 禁用按钮，防止重复点击
+    startBtn.disabled = true;
+    resetSteps();
+    setStatus('⏳ 寻宝进行中...', true);
+
+    try {
+      // --- 第1步：图书馆 ---
+      setStepActive(step1);
+      addLog('🏁 开始寻宝！前往古老图书馆...', 'funny');
+      updateScene('📚', '正在图书馆中寻找线索...');
+      await wait(200); // 轻微延迟，动画顺滑
+
+      const clueResult = await TreasureMap.getInitialClue();
+      addLog(`📜 ${clueResult.clue}`, 'normal');
+      addLog(clueResult.extra, 'funny');
+      updateScene(clueResult.icon, clueResult.clue, '古老图书馆');
+      await wait(600);
+
+      // --- 第2步：解码古卷 ---
+      setStepDone(step1);
+      setStepActive(step2);
+      addLog('🔍 开始解码古老卷轴...', 'normal');
+      updateScene('📖', '正在解读神秘文字...');
+
+      const decodeResult = await TreasureMap.decodeAncientScript(clueResult.clue, clueResult.extra);
+      addLog(`🔮 ${decodeResult.location}`, 'success');
+      addLog(decodeResult.extra, 'funny');
+      updateScene(decodeResult.icon, decodeResult.location, '古老神庙');
+      await wait(600);
+
+      // --- 第3步：神庙搜索（含新情节：遇到守卫）---
+      setStepDone(step2);
+      setStepActive(step3);
+      addLog('🏛️ 前往神庙，探索未知区域...', 'normal');
+      updateScene('🏛️', '进入古老神庙，光线昏暗...');
+      await wait(400);
+
+      let templeResult;
+      try {
+        templeResult = await TreasureMap.searchTemple(decodeResult.location, decodeResult.extra);
+        addLog(`🎁 ${templeResult.box}`, 'success');
+        addLog(templeResult.extra, 'funny');
+        updateScene(templeResult.icon, templeResult.box, '神秘的箱子');
+      } catch (guardianError) {
+        // 新情节：遇到守卫！尝试安抚
+        addLog(`⚠️ ${guardianError.error}`, 'error');
+        addLog(guardianError.extra, 'funny');
+        updateScene('🗿', guardianError.error, '神庙守卫');
+        await wait(800);
+
+        // 触发新情节：讲谜语安抚守卫
+        addLog('💡 你决定讲一个谜语来分散守卫的注意力...', 'funny');
+        updateScene('🤔', '思考谜语中...');
+        const calmResult = await TreasureMap.calmGuardian();
+        addLog(calmResult.message, 'funny');
+        addLog(calmResult.extra, 'success');
+        updateScene('😴', calmResult.message, '守卫');
+
+        // 守卫让路后，继续搜索
+        await wait(600);
+        addLog('🚶 你绕过守卫，继续搜索神庙...', 'normal');
+        updateScene('🔦', '仔细搜寻神庙角落...');
+        await wait(400);
+
+        // 再次尝试搜索（这次守卫已睡着，必定成功，但演示时可使用强制成功，但保留随机性亦可——这里用随机分支处理更真实，但为了剧情，我们模拟成功）
+        // 由于是模拟，我们直接生成成功结果，但也可以调用searchTemple再次尝试。为了展示async/await的灵活性，我们手动构造成功结果
+        // 更真实：再次调用searchTemple，但守卫已走，使用修改概率? 简单起见，我们直接构造成功场景
+        // 但为了代码优雅，还是用searchTemple再试一次(如果再次失败就嵌套，但演示不必)
+        // 这里采用直接构造成功结果，保留趣味性。
+        const successBox = {
+          box: "找到了一个神秘的箱子...",
+          extra: "😴 守卫睡得很香，你轻松拿到了箱子旁边的钥匙",
+          icon: "🎁"
+        };
+        addLog(`🎁 ${successBox.box}`, 'success');
+        addLog(successBox.extra, 'funny');
+        updateScene(successBox.icon, successBox.box, '神秘的箱子');
+      }
+
+      await wait(600);
+
+      // --- 第4步：打开宝箱 ---
+      setStepDone(step3);
+      setStepActive(step4);
+      addLog('🔓 正在打开宝箱...', 'normal');
+      updateScene('📦', '宝箱闪烁着耀眼的光芒...');
+
+      const treasureResult = await TreasureMap.openTreasureBox();
+      addLog(`🏆 ${treasureResult.treasure}`, 'success');
+      addLog(treasureResult.extra, 'funny');
+      updateScene(treasureResult.icon, treasureResult.treasure, '传说中的宝藏');
+
+      // 完成！
+      setStepDone(step4);
+      setStatus('🎉 寻宝成功！', true);
+      addLog('✨ 冒险结束，你带着宝藏满载而归！', 'success');
+
+    } catch (error) {
+      // 全局错误处理
+      console.error('寻宝失败:', error);
+      addLog(`❌ 任务失败: ${error.error || error || '未知错误'}`, 'error');
+      setStatus('😵 寻宝失败...', false);
+      updateScene('💥', '寻宝途中遇到意外...', '');
+      // 把当前active步骤恢复（可选）
+      [step1, step2, step3, step4].forEach(s => s.classList.remove('active'));
+    } finally {
+      startBtn.disabled = false;
+    }
+  }
+
+  // 启动函数（挂载到全局）
+  window.startAdventure = async function() {
+    // 清空日志面板，保留欢迎信息? 简单清理
+    logPanel.innerHTML = '';
+    addLog('🌟 新的寻宝冒险开始！', 'funny');
+    // 重置场景和步骤
+    updateScene('🏛️', '准备探索古老神庙...');
+    resetSteps();
+    // 开始异步寻宝
+    await findTreasureWithAsync();
+  };
+
+  // 页面加载后自动聚焦，但等待用户点击
+  window.addEventListener('load', () => {
+    // 初始场景已经设置好
+    console.log('寻宝游戏已加载，点击按钮开始！');
+  });
+</script>
+</body>
+</html>
